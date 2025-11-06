@@ -32,7 +32,7 @@ namespace HardResetReduxUnpacker
                     fileEntries.Add(entry);
                 }
 
-                reader.ReadUInt32(); 
+                reader.ReadUInt32();
                 long dataBlockStartOffset = reader.BaseStream.Position;
 
                 Console.WriteLine($"Data block starts at offset: 0x{dataBlockStartOffset:X}");
@@ -42,10 +42,19 @@ namespace HardResetReduxUnpacker
                     entry.AbsoluteOffset = dataBlockStartOffset + entry.RelativeOffset;
 
                     Console.WriteLine($"Extracting: {entry.Name} (Compressed: {entry.CompressedSize}, Decompressed: {entry.DecompressedSize})");
-                    reader.BaseStream.Seek(entry.AbsoluteOffset, SeekOrigin.Begin);
-                    byte[] compressedData = reader.ReadBytes((int)entry.CompressedSize);
-                    byte[] decompressedData = DecompressZlib(compressedData, entry.DecompressedSize);
                     string outputFilePath = Path.Combine(outputDirectory, entry.Name.Replace('/', Path.DirectorySeparatorChar));
+                    byte[] decompressedData;
+                    reader.BaseStream.Seek(entry.AbsoluteOffset, SeekOrigin.Begin);
+                    if (entry.CompressedSize > 0)
+                    {
+                        byte[] compressedData = reader.ReadBytes((int)entry.CompressedSize);
+                        decompressedData = DecompressZlib(compressedData, entry.DecompressedSize);
+
+                    }
+                    else
+                    {
+                        decompressedData = reader.ReadBytes((int)entry.DecompressedSize);
+                    }
                     string? fileDir = Path.GetDirectoryName(outputFilePath);
                     if (!string.IsNullOrEmpty(fileDir))
                     {
